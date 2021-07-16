@@ -1,0 +1,52 @@
+---
+- name: Ensure group "{{ ovh_dyndns__group }}" exists
+  become: true
+  ansible.builtin.group:
+    name: "{{ ovh_dyndns__group }}"
+    state: present
+
+- name: Add the user "{{ ovh_dyndns__user }}"
+  become: true
+  ansible.builtin.user:
+    name: "{{ ovh_dyndns__user }}"
+    comment: OVH DynDNS API User
+    group: "{{ ovh_dyndns__group }}"
+
+- name: update repo-cache for debian/ubuntu
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when:
+    - ansible_pkg_mgr == "apt"
+
+- name: install python venv requirements
+  become: true
+  ansible.builtin.package:
+    name:
+      - python3-dev
+      - python3-virtualenv
+      - python3-venv
+      - virtualenv
+    state: present
+  register: _package_change
+
+- name: install ovh via pip
+  become: true
+  ansible.builtin.pip:
+    name: 'ovh'
+    state: present
+    virtualenv_python: python3
+    virtualenv: "/home/{{ ovh_dyndns__user }}/.ovh-env"
+  changed_when: _package_change.changed
+
+- name: set venv permissions
+  become: true
+  ansible.builtin.file:
+    path: "/home/{{ ovh_dyndns__user }}/.ovh-env"
+    state: directory
+    recurse: true
+    owner: "{{ ovh_dyndns__user }}"
+    group: "{{ ovh_dyndns__group }}"
+  changed_when: _package_change.changed
+

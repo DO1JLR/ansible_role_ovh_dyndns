@@ -1,3 +1,7 @@
 ---
-- include_tasks: versioncheck.yml
+- name: perform optional versionscheck
+  ansible.builtin.include_tasks: versioncheck.yml
   when: submodules_versioncheck|bool
+
+- name: setup user and enviroment
+  ansible.builtin.include_tasks: setup_env.yml
