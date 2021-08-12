@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+# {{ ansible_managed }}
+'''
+First, install the latest release of Python wrapper: $ pip install ovh
+'''
+import json
+import netifaces as ni
+import ovh
+
+# get public ipv6 address
+ni.ifaddresses('{{ ovh_dyndns__interface }}')
+ip = ni.ifaddresses('{{ ovh_dyndns__interface }}')[ni.AF_INET6][0]['addr']
+
+# Instanciate an OVH Client.
+# You can generate new credentials with full access to your account on
+# the token creation page
+client = ovh.Client(
+    endpoint='ovh-eu',               # Endpoint of API OVH Europe (List of available endpoints)
+    application_key='{{ ovh_dyndns__application_key }}',    # Application Key
+    application_secret='{{ ovh_dyndns__application_secret }}', # Application Secret
+    consumer_key='{{ ovh_dyndns__consumer_key }}',       # Consumer Key
+)
+
+# get domain id
+result = client.get('/domain/zone/{{ ovh_dyndns__domain_zone }}/record',
+    fieldType='AAAA',
+    subDomain='{{ ovh_dyndns__subDomain }}',
+)
+domain_id = json.dumps(result, indent=4)
+
+new_dns_entryresult = client.post('/domain/zone/{{ ovh_dyndns__domain_zone }}/record',
+    fieldType='AAAA',
+    subDomain='{{ ovh_dyndns__subDomain }}',
+    target=ip,
+    ttl=None
+)
+
+update_dns_entryresult = client.post('/domain/zone/{{ ovh_dyndns__domain_zone }}/record/' + domain_id[0],
+    fieldType='AAAA',
+    subDomain='{{ ovh_dyndns__subDomain }}',
+    target=ip,
+    ttl=None
+)
+
+refresh = client.post('/domain/zone/{{ ovh_dyndns__domain_zone }}/refresh')
+
+if (len(domain_id)) == 0:
+  # set new dns entry if no entries are available
+  print( json.dumps(new_dns_entryresult, indent=4))
+elif (len(domain_id)) == 1:
+  # update domain entry
+  print( json.dumps(update_dns_entryresult, indent=4))
+else:
+  for dmid in domain_id:
+    clean = str(str('/domain/zone/{{ ovh_dyndns__domain_zone }}/record/') + str(dmid))
+    cleanup = client.delete(str(clean))
+    print( json.dumps(cleanup, indent=4))
+  print( json.dumps(new_dns_entryresult, indent=4))
+
+# update zone
+print( json.dumps(refresh, indent=4))

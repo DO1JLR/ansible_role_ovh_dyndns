@@ -5,3 +5,12 @@
 
 - name: setup user and enviroment
   ansible.builtin.include_tasks: setup_env.yml
+
+- name: copy script
+  become: true
+  ansible.builtin.template:
+    src: 'templates/set_fqdn.sh.j2'
+    dest: "{{ ovh_dyndns__script_destination }}"
+    owner: "{{ ovh_dyndns__user }}"
+    group: "{{ ovh_dyndns__group }}"
+    mode: 0750

@@ -2,5 +2,13 @@
 ovh_dyndns__user: ovh
 ovh_dyndns__group: ovh
 
+# variables for the python-script
+## ovh_dyndns__application_key: 'YOUR_OVH_KEY'
+## ovh_dyndns__application_secret 'YOUR_OVH_SECRET'
+ovh_dyndns__interface: "{{ ansible_default_ipv6.interface | default('enp1s0') }}"
+ovh_dyndns__domain_zone: 'example.com'
+ovh_dyndns__subDomain: 'www'
+ovh_dyndns__script_destination: "/home/{{ ovh_dyndns__user }}/ovh_set_{{ ovh_dyndns__subDomain }}.{{ ovh_dyndns__domain_zone }}.py"
+
 # should we do a version check? (recomended)
 submodules_versioncheck: false
